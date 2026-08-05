@@ -51,7 +51,7 @@
     line-height: 1.3;
     margin: 0 0 8px;
   }
- .field-icon input[type="text"], .field-icon input[type="email"] {
+  .field-icon {
     position: relative;
   }
   .field-icon svg {
@@ -63,7 +63,7 @@
     stroke: var(--accent-dark);
     pointer-events: none;
   }
-  .field-icon input {
+  .field-icon input[type="text"], .field-icon input[type="email"] {
     padding-left: 42px;
   }
   p.lead {
@@ -234,11 +234,9 @@
 </div>
 
 <script>
-  var API = window.location.origin.replace(/\/$/, '') + '/api/lead';
-  // Локальный тест без общего домена — переопределяется на реальном при деплое.
-  if (window.location.protocol === 'file:') {
-    API = 'http://127.0.0.1:8790/api/lead';
-  }
+  // ВРЕМЕННО: пока нет своего домена с HTTPS для бэкенда, используем туннель.
+  // TODO: заменить на постоянный адрес API после подключения домена.
+  var API = 'https://accept-counters-accept-katie.trycloudflare.com/api/lead';
 
   var form = document.getElementById('leadForm');
   var nameInput = document.getElementById('name');
