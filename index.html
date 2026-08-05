@@ -289,4 +289,277 @@
       miles.forEach(function (m) {
         var ready = petals >= m.day;
         html += '<div class="mile ' + (ready ? "ready" : "locked") + '" data-mile="' + m.day + '">' +
-                '<b>' + m.day + '</b><span>' + esc(m.short || m.title) + '</span>
+                '<b>' + m.day + '</b><span>' + esc(m.short || m.title) + '</span></div>';
+      });
+      html += '</div></section>';
+    }
+
+    /* classes */
+    var cls = DATA.classes || {}, up = cls.upcoming || [];
+    var shown = showAllClasses ? up : up.slice(0, 3);
+    html += '<section><div class="sec-head"><h2>Book a class</h2><span>' + up.length + ' available</span></div><div style="height:10px"></div>';
+    shown.forEach(function (c) {
+      var low = (c.spotsLeft || 0) <= 4;
+      var w = (c.date || "").split(" "), big = w[0] || "", small = w.slice(1).join(" ") || (c.time || "");
+      if (/^[A-Za-z]/.test(big) && big.length > 4) { big = w.slice(0, 2).join(" "); small = w.slice(2).join(" ") || (c.time || ""); }
+      html += '<div class="session' + (c.reserved ? " reserved" : "") + '" data-sid="' + esc(c.id) + '">' +
+                '<div class="s-when"><b>' + esc(big) + '</b><i>' + esc(small) + '</i></div>' +
+                '<div class="s-body"><div class="s-title">' + esc(c.title) + '</div>' +
+                  '<div class="s-meta">' + esc(c.format || "") + (c.price ? " · " + esc(c.price) : "") + '</div>' +
+                  '<div class="s-spots' + (low ? " low" : "") + '">' + (c.reserved ? "Place held" : (c.spotsLeft || 0) + " left") + '</div></div>' +
+                '<button class="btn-ghost book"' + (c.reserved ? " disabled" : "") + '>' + (c.reserved ? "✓" : "Reserve") + '</button></div>';
+    });
+    if (up.length > 3) {
+      html += '<button class="see-all" id="seeAll">' +
+              (showAllClasses ? "Less &#9652;" : "More &#9662;") + '</button>';
+    }
+    html += '</section>';
+
+    app.innerHTML = html;
+    bind();
+  }
+
+  function bind() {
+    Array.prototype.forEach.call(document.querySelectorAll(".habit, .suggestion"), function (el) {
+      el.addEventListener("click", function () { toggleHabit(el.getAttribute("data-id")); });
+    });
+    var add = document.getElementById("ownAdd");
+    if (add) {
+      var inp = document.getElementById("ownInput");
+      add.onclick = function () { addOwn(inp.value); };
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addOwn(inp.value); } });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-own]"), function (el) {
+      el.addEventListener("click", function (e) {
+        if (e.target.hasAttribute("data-remove")) return;
+        var r = dayRecord(todayISO()), i = parseInt(el.getAttribute("data-own"), 10);
+        r.own[i].done = !r.own[i].done; saveState(); haptic("light"); render();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-remove]"), function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var r = dayRecord(todayISO());
+        r.own.splice(parseInt(b.getAttribute("data-remove"), 10), 1);
+        saveState(); render();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".session .book"), function (btn) {
+      btn.addEventListener("click", function () {
+        var w = btn.closest(".session");
+        if (w) askToReserve(w.getAttribute("data-sid"));
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-mile]"), function (el) {
+      el.addEventListener("click", function () { openMilestone(parseInt(el.getAttribute("data-mile"), 10)); });
+    });
+    var sa = document.getElementById("seeAll");
+    if (sa) sa.onclick = function () { showAllClasses = !showAllClasses; render(); };
+    var fb = document.getElementById("finishBtn");
+    if (fb && !fb.disabled) fb.onclick = finishDay;
+  }
+
+  function toggleHabit(id) {
+    var rec = dayRecord(todayISO());
+    var day = programDay(), set = todaysSet(day);
+    var h = set.habits.filter(function (x) { return x.id === id; })[0];
+    rec.done[id] = !rec.done[id];
+    saveState();
+    haptic(rec.done[id] ? "medium" : "light");
+    render();
+    if (rec.done[id] && h) toast(h.praise);
+
+    var all = set.habits.every(function (x) { return rec.done[x.id]; });
+    if (all && !rec.celebrated) { rec.celebrated = true; saveState(); setTimeout(celebrate, 480); }
+  }
+
+  function addOwn(raw) {
+    var text = (raw || "").trim().replace(/\s+/g, " ");
+    if (text.length < 3) { toast("Write a few words first."); return; }
+    var own = DATA.ownSuggestions || {}, rec = dayRecord(todayISO());
+    if (rec.own.length >= (own.maxPerDay || 2)) { toast("Two is the limit for today."); return; }
+    rec.own.push({ text: text, done: false });
+    saveState(); haptic("medium"); render();
+    toast("Added. Thank you — this may inspire others.");
+    sendSuggestion(text);
+  }
+
+  function sendSuggestion(text) {
+    var own = DATA.ownSuggestions || {};
+    var payload = { text: text, day: programDay(), student: STATE.name || null, telegramId: null, sentAt: new Date().toISOString() };
+    try { if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) payload.telegramId = tg.initDataUnsafe.user.id; } catch (e) {}
+    if (!own.collectUrl) return;
+    try {
+      fetch(own.collectUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) }).catch(function () {});
+    } catch (e) {}
+  }
+
+  function celebrate() {
+    var list = DATA.completion || [];
+    var day = programDay();
+    var c = list.length ? list[Math.floor(rng(777 + day)() * list.length)] : { title: "Day complete", line: "All four kept.", tomorrow: "" };
+    haptic("medium");
+    document.getElementById("daycard").innerHTML =
+      '<div class="mark">✦ ✦ ✦</div><h3>' + esc(c.title) + '</h3>' +
+      '<div class="share">all four complete</div>' +
+      '<p class="line">' + esc(c.line) + '</p>' +
+      '<div class="stat">' + currentStreak() + ' <small>day streak</small></div>' +
+      (c.tomorrow ? '<div class="tomorrow">' + esc(c.tomorrow) + '</div>' : '') +
+      '<div class="brand">' + esc((DATA.brand && DATA.brand.name) || "Elegance Academy") + '</div>' +
+      '<button id="closeCard">Close</button>';
+    document.getElementById("overlay").classList.add("open");
+    document.getElementById("closeCard").onclick = function () { closeOverlay(); checkMilestone(); };
+  }
+
+  function finishDay() {
+    var rec = dayRecord(todayISO());
+    rec.closed = true; saveState();
+    var done = 0, set = todaysSet(programDay());
+    set.habits.forEach(function (h) { if (rec.done[h.id]) done++; });
+    var dc = DATA.dayCard || {}, notes = dc.closingNotes || ["Elegance is a daily choice."];
+    haptic("medium");
+    document.getElementById("daycard").innerHTML =
+      '<div class="mark">✦ ✦ ✦</div><h3>' + esc(dc.title || "Day complete") + '</h3>' +
+      '<div class="share">Day ' + programDay() + ' at Elegance Academy</div>' +
+      '<div class="stat">' + done + ' <small>of ' + set.habits.length + '</small></div>' +
+      '<p class="line" style="font-style:italic;color:var(--soft)">' + esc(notes[Math.floor(Math.random() * notes.length)]) + '</p>' +
+      '<div class="brand">' + esc((DATA.brand && DATA.brand.name) || "Elegance Academy") + '</div>' +
+      '<button id="closeCard">Close</button>';
+    document.getElementById("overlay").classList.add("open");
+    document.getElementById("closeCard").onclick = function () { closeOverlay(); render(); checkMilestone(); };
+  }
+
+  /* ================= milestones ================= */
+  function checkMilestone() {
+    var petals = completedCount();
+    var due = (DATA.milestones || []).filter(function (m) { return petals >= m.day && !STATE.milestones[m.day]; })[0];
+    if (due) { STATE.milestones[due.day] = todayISO(); saveState(); setTimeout(function () { openMilestone(due.day, true); }, 400); }
+  }
+
+  function openMilestone(day, isNew) {
+    var m = (DATA.milestones || []).filter(function (x) { return x.day === day; })[0];
+    if (!m) return;
+    var petals = completedCount();
+    if (petals < m.day) {
+      toast(m.day - petals + " more day" + (m.day - petals === 1 ? "" : "s") + " to unlock this.");
+      return;
+    }
+    haptic("medium");
+    var body = '<div class="mark">✦</div><h3>' + esc(m.title) + '</h3>' +
+               '<div class="share">' + (isNew ? "unlocked today" : "day " + m.day) + '</div>' +
+               '<p class="line">' + esc(m.body || "") + '</p>';
+    if (m.type === "voice" && m.audioUrl) body += '<audio controls src="' + esc(m.audioUrl) + '"></audio>';
+    if (m.type === "voice" && !m.audioUrl) body += '<p class="line" style="color:var(--soft);font-style:italic">Your voice message will appear here.</p>';
+    if (m.type === "reward" && m.code) body += '<div class="code">' + esc(m.code) + '</div>' +
+      '<p class="line" style="font-size:12.5px;color:var(--soft)">' + esc(m.howTo || "") + '</p>';
+    body += '<div class="brand">' + esc((DATA.brand && DATA.brand.name) || "Elegance Academy") + '</div><button id="closeCard">Close</button>';
+    document.getElementById("daycard").innerHTML = body;
+    document.getElementById("overlay").classList.add("open");
+    document.getElementById("closeCard").onclick = function () { closeOverlay(); render(); };
+  }
+
+  /* ================= booking ================= */
+  function askToReserve(id) {
+    var c = (DATA.classes.upcoming || []).filter(function (x) { return x.id === id; })[0];
+    if (!c || c.reserved) return;
+    haptic("light");
+    document.getElementById("daycard").innerHTML =
+      '<div class="mark">✦</div><h3>Reserve your place</h3>' +
+      '<p class="line" style="font-family:Georgia,serif;font-size:19px">' + esc(c.title) + '</p>' +
+      '<div class="share" style="color:var(--soft);margin-top:8px">' + esc([c.date, c.time].filter(Boolean).join(" · ")) + '</div>' +
+      '<div class="share" style="color:var(--soft);margin-top:4px">' + esc(c.format || "") + '</div>' +
+      '<div class="tomorrow">You will finish booking on our website. Confirmation arrives by email.</div>' +
+      '<button class="primary" id="confirmBook">Continue to booking</button><button id="closeCard">Not now</button>';
+    document.getElementById("overlay").classList.add("open");
+    document.getElementById("closeCard").onclick = closeOverlay;
+    document.getElementById("confirmBook").onclick = function () {
+      haptic("medium");
+      try { if (tg && tg.openLink) tg.openLink(c.bookingUrl); else window.open(c.bookingUrl, "_blank"); } catch (e) {}
+      c.reserved = true; if (c.spotsLeft > 0) c.spotsLeft--;
+      closeOverlay(); render(); toast("Opening your booking page…");
+    };
+  }
+
+  /* ================= onboarding ================= */
+  function welcome() {
+    var suggested = "";
+    try { if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) suggested = tg.initDataUnsafe.user.first_name || ""; } catch (e) {}
+    var appCfg = DATA.app || {};
+    document.getElementById("daycard").innerHTML =
+      '<div class="mark">✦</div>' +
+      '<h3>' + esc(appCfg.welcomeTitle || appCfg.name || "My Elegance Journey") + '</h3>' +
+      '<div class="share">' + esc("by " + (appCfg.by || (DATA.brand && DATA.brand.name) || "Elegance Academy")) + '</div>' +
+      '<p class="line">' + esc(appCfg.welcomeLine || "Ninety days of small courtesies. One petal for every day you complete.") + '</p>' +
+      '<input id="nameInput" type="text" maxlength="24" placeholder="Your name" value="' + esc(suggested) + '">' +
+      '<button class="primary" id="beginBtn">Begin day one</button>';
+    document.getElementById("overlay").classList.add("open");
+    var inp = document.getElementById("nameInput");
+    document.getElementById("beginBtn").onclick = function () {
+      var n = (inp.value || "").trim();
+      if (n.length < 2) { toast("Please write your name."); return; }
+      STATE.name = n; STATE.start = todayISO(); saveState();
+      haptic("medium"); closeOverlay(); render();
+    };
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") document.getElementById("beginBtn").click(); });
+  }
+
+  document.getElementById("overlay").addEventListener("click", function (e) { if (e.target === this) closeOverlay(); });
+
+  /* ================= boot ================= */
+  function showFallback(msg) {
+    app.innerHTML = '<div class="state"><div class="mark">✦</div><h2 class="serif">We could not load your practice</h2><p>' +
+      esc(msg) + '</p><button id="retryBtn">Try again</button></div>';
+    document.getElementById("retryBtn").onclick = load;
+  }
+
+  function identifyWithServer(localState, cb) {
+    if (!TELEGRAM_ID) { cb(null); return; }
+    fetch(API + "/api/identify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        telegram_id: TELEGRAM_ID,
+        name: TELEGRAM_FIRST_NAME,
+        start: localState ? localState.start : null,
+      }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) { cb(data && !data.error ? data : null); })
+      .catch(function () { cb(null); });
+  }
+
+  function load() {
+    app.innerHTML = '<div class="state"><div class="mark">✦</div><h2 class="serif">Elegance Academy</h2><p>Preparing your practice…</p></div>';
+    Promise.resolve(window.__APP_DATA__)
+      .then(function (json) {
+        DATA = json;
+        loadState(function (saved) {
+          var localState = saved && saved.start ? saved : null;
+          identifyWithServer(localState, function (server) {
+            if (server) {
+              STUDENT_ID = server.student_id;
+              if (server.state && server.state.start) {
+                STATE = server.state;
+              } else if (localState) {
+                STATE = localState;
+                saveState();
+              } else {
+                STATE = blankState();
+              }
+            } else {
+              STATE = localState || blankState();
+            }
+            if (!STATE.milestones) STATE.milestones = {};
+            if (!STATE.days) STATE.days = {};
+            if (!STATE.name) { render(); welcome(); }
+            else { render(); }
+          });
+        });
+      })
+      .catch(function (err) {
+        showFallback("We could not reach data.json (" + err.message + "). Check that it sits beside index.html, then try again.");
+      });
+  }
+
+  load();
+})();
