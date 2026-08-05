@@ -1,0 +1,319 @@
+$ cat "/private/tmp/claude-501/-Users-irinakhaimova/74ad412b-425d-4f01-937c-f94518fc43c4/scratchpad/lead-form.html"
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Elegance Journey — Elegance Academy</title>
+<style>
+  :root {
+    --accent: #9C5F16;
+    --accent-dark: #6e440f;
+    --bg: #FFFDFA;
+    --card: #FFFFFF;
+    --line: #ddd3ba;
+    --text: #454240;
+    --muted: #5C4E3D;
+    --error: #b23b3b;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      linear-gradient(rgba(20, 14, 4, 0.15), rgba(20, 14, 4, 0.15)),
+      url("https://cdn.gamma.app/zc87vhr30n8uf3n/07c66c83846c4847bc9c416a51c41577/original/GoldLeaf-4.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    box-shadow: 0 12px 40px rgba(20, 14, 4, 0.25);
+  }
+  .mark {
+    font-size: 22px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 26px;
+    line-height: 1.3;
+    margin: 0 0 8px;
+  }
+  .field-icon {
+    position: relative;
+  }
+  .field-icon svg {
+    position: absolute;
+    left: 14px;
+    top: 13px;
+    width: 18px;
+    height: 18px;
+    stroke: var(--accent-dark);
+    pointer-events: none;
+  }
+  .field-icon input {
+    padding-left: 42px;
+  }
+  p.lead {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--muted);
+    margin: 0 0 28px;
+  }
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    margin-top: 20px;
+  }
+  label:first-of-type { margin-top: 0; }
+  input[type="text"], input[type="email"] {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: white;
+    color: var(--text);
+    font-family: inherit;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(180, 88, 124, 0.15);
+  }
+  .field-error {
+    color: var(--error);
+    font-size: 13px;
+    margin-top: 6px;
+    display: none;
+  }
+  .field-error.show { display: block; }
+  input.invalid { border-color: var(--error); }
+
+  .consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .consent-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    margin-top: 1px;
+    accent-color: var(--accent);
+  }
+  .consent-row label {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .consent-row a { color: var(--accent-dark); }
+
+  button {
+    width: 100%;
+    margin-top: 28px;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 120ms ease;
+  }
+  button:hover { filter: brightness(1.05); }
+  button:active { transform: scale(0.96); }
+  button:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+  .form-error {
+    background: #FBEEEE;
+    border: 1px solid #E0B3B3;
+    color: var(--error);
+    font-size: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-top: 20px;
+    display: none;
+  }
+  .form-error.show { display: block; }
+
+  .success {
+    text-align: center;
+    display: none;
+  }
+  .success.show { display: block; }
+  .success h1 { font-size: 24px; }
+  .success p { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+  .success a.bot-link {
+    display: inline-block;
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border-radius: 8px;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .success a.bot-link:active { transform: scale(0.96); }
+
+  #formView.hide { display: none; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div id="formView">
+    <div class="mark" aria-hidden="true">&#10022;</div>
+    <h1>Your daily companion for graceful habits</h1>
+    <p class="lead">Leave your name and email to unlock "My Elegance Journey" — a free daily practice from Elegance Academy, delivered through a simple Telegram companion.</p>
+
+    <form id="leadForm" novalidate>
+      <label for="name">Name</label>
+      <div class="field-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        <input type="text" id="name" name="name" autocomplete="name" placeholder="Jane Smith">
+      </div>
+      <div class="field-error" id="nameError">Please enter your name.</div>
+
+      <label for="email">Email</label>
+      <div class="field-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/>
+        </svg>
+        <input type="email" id="email" name="email" autocomplete="email" placeholder="jane@example.com">
+      </div>
+      <div class="field-error" id="emailError">Please enter a valid email address, like jane@example.com.</div>
+
+      <div class="consent-row">
+        <input type="checkbox" id="dataConsent" name="dataConsent">
+        <label for="dataConsent">I agree that Elegance Academy may process my name and email to give me access to this practice. See the <a href="/privacy.html" target="_blank">Privacy Policy</a>.</label>
+      </div>
+      <div class="field-error" id="consentError">This is required to continue.</div>
+
+      <div class="consent-row">
+        <input type="checkbox" id="marketingConsent" name="marketingConsent">
+        <label for="marketingConsent">I'd also like occasional emails about classes and offers from Elegance Academy. (Optional)</label>
+      </div>
+
+      <div class="form-error" id="formError"></div>
+
+      <button type="submit" id="submitBtn">Start my practice</button>
+    </form>
+  </div>
+
+  <div class="success" id="successView">
+    <h1>You're in</h1>
+    <p>Tap below to open "My Elegance Journey" in Telegram and begin your first day.</p>
+    <a class="bot-link" id="botLink" href="#" target="_blank">Open My Elegance Journey</a>
+  </div>
+
+</div>
+
+<script>
+  var API = window.location.origin.replace(/\/$/, '') + '/api/lead';
+  // Локальный тест без общего домена — переопределяется на реальном при деплое.
+  if (window.location.protocol === 'file:') {
+    API = 'http://127.0.0.1:8790/api/lead';
+  }
+
+  var form = document.getElementById('leadForm');
+  var nameInput = document.getElementById('name');
+  var emailInput = document.getElementById('email');
+  var dataConsent = document.getElementById('dataConsent');
+  var marketingConsent = document.getElementById('marketingConsent');
+  var submitBtn = document.getElementById('submitBtn');
+  var formError = document.getElementById('formError');
+
+  function emailValid(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  function validateField(input, errorEl, ok) {
+    if (ok) {
+      input.classList.remove('invalid');
+      errorEl.classList.remove('show');
+    } else {
+      input.classList.add('invalid');
+      errorEl.classList.add('show');
+    }
+    return ok;
+  }
+
+  nameInput.addEventListener('blur', function () {
+    validateField(nameInput, document.getElementById('nameError'), nameInput.value.trim().length > 0);
+  });
+  emailInput.addEventListener('blur', function () {
+    validateField(emailInput, document.getElementById('emailError'), emailValid(emailInput.value.trim()));
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    formError.classList.remove('show');
+
+    var nameOk = validateField(nameInput, document.getElementById('nameError'), nameInput.value.trim().length > 0);
+    var emailOk = validateField(emailInput, document.getElementById('emailError'), emailValid(emailInput.value.trim()));
+    var consentOk = dataConsent.checked;
+    document.getElementById('consentError').classList.toggle('show', !consentOk);
+
+    if (!nameOk || !emailOk || !consentOk) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+
+    var consentText = 'I agree that Elegance Academy may process my name and email to give me access to this practice.' +
+      (marketingConsent.checked ? ' I would also like occasional emails about classes and offers.' : '');
+
+    fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
+        data_consent: true,
+        marketing_consent: marketingConsent.checked,
+        consent_text: consentText,
+      }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.error) throw new Error(data.error);
+        document.getElementById('botLink').href = 'https://' + data.bot_link;
+        document.getElementById('formView').classList.add('hide');
+        document.getElementById('successView').classList.add('show');
+      })
+      .catch(function (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Start my practice';
+        formError.textContent = 'Something went wrong on our side. Please try again in a moment.';
+        formError.classList.add('show');
+      });
+  });
+</script>
+</body>
+</html>
