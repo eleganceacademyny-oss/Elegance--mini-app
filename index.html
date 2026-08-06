@@ -361,7 +361,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       { count: 24, rx: 5, ry: 18, dist: 21, rot: 3 }
     ];
     var placed = 0, i, ring, k, ang, on, fill, stroke;
-    for (k = rings.length - 1; k >= 0; k--) {
+    for (k = 0; k < rings.length; k++) {
       ring = rings[k];
       for (i = 0; i < ring.count; i++) {
         ang = ring.rot + i * (360 / ring.count);
