@@ -234,9 +234,8 @@
 </div>
 
 <script>
-  // ВРЕМЕННО: пока нет своего домена с HTTPS для бэкенда, используем туннель.
-  // TODO: заменить на постоянный адрес API после подключения домена.
-  var API = 'https://accept-counters-accept-katie.trycloudflare.com/api/lead';
+  var API = 'https://script.google.com/macros/s/AKfycbxzvZ80dc7hN7v65FtbaFM8deHPjYr_-BwDpNE4kEQJHpSO2JsW_TKQXRD5PVmUIKQe/exec';
+  var BOT_LINK = 'https://t.me/Elegancejourney_bot';
 
   var form = document.getElementById('leadForm');
   var nameInput = document.getElementById('name');
@@ -287,8 +286,10 @@
 
     fetch(API, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
+        type: 'lead',
         name: nameInput.value.trim(),
         email: emailInput.value.trim(),
         data_consent: true,
@@ -296,10 +297,8 @@
         consent_text: consentText,
       }),
     })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (data.error) throw new Error(data.error);
-        document.getElementById('botLink').href = 'https://' + data.bot_link;
+      .then(function () {
+        document.getElementById('botLink').href = BOT_LINK;
         document.getElementById('formView').classList.add('hide');
         document.getElementById('successView').classList.add('show');
       })
