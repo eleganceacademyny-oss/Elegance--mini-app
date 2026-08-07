@@ -366,7 +366,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       for (i = 0; i < ring.count; i++) {
         ang = ring.rot + i * (360 / ring.count);
         on = placed < filled;
-        fill = on ? (k === 0 ? "#FBE6EE" : k === 1 ? "#F3C4D8" : "#E39FBC") : "#FFFFFF";
+        fill = on ? (k === 0 ? "#E39FBC" : k === 1 ? "#F3C4D8" : "#FBE6EE") : "#FFFFFF";
         stroke = on ? "rgba(180,88,124,0.30)" : "#F2E7EB";
         s += '<ellipse cx="100" cy="' + (100 - ring.dist) + '" rx="' + ring.rx + '" ry="' + ring.ry +
              '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="0.8" ' +
