@@ -208,6 +208,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
   } catch (e) {}
   var STUDENT_ID = null;
   var NEEDS_CONTACT = false;
+  var GATE_OPEN = false;
 
   /* ================= storage =================
      Telegram CloudStorage keeps progress across devices.
@@ -695,6 +696,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       '<label class="consent"><input type="checkbox" id="cMkt"><span>I would also like occasional emails about classes and offers.</span></label>' +
       '<button class="primary" id="cSave">Continue my practice</button>';
     document.getElementById("overlay").classList.add("open");
+    GATE_OPEN = true;
     document.getElementById("cSave").onclick = function () {
       var n = (document.getElementById("cName").value || "").trim();
       var ln = (document.getElementById("cLast").value || "").trim();
@@ -705,6 +707,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       if (!document.getElementById("cData").checked) { toast("Please tick the consent box."); return; }
       sendContact(n + " " + ln, em, document.getElementById("cMkt").checked);
       STATE.name = n; saveState();
+      GATE_OPEN = false;
       haptic("medium"); closeOverlay(); render();
     };
   }
@@ -725,6 +728,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       '<label class="consent"><input type="checkbox" id="mktConsent"><span>I would also like occasional emails about classes and offers.</span></label>' +
       '<button class="primary" id="beginBtn">Begin day one</button>';
     document.getElementById("overlay").classList.add("open");
+    GATE_OPEN = true;
     var inp = document.getElementById("nameInput");
     document.getElementById("beginBtn").onclick = function () {
       var n = (inp.value || "").trim();
@@ -737,12 +741,13 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       var mkt = document.getElementById("mktConsent").checked;
       STATE.name = n; STATE.start = todayISO(); saveState();
       sendContact(n + " " + ln, em, mkt);
+      GATE_OPEN = false;
       haptic("medium"); closeOverlay(); render();
     };
     inp.addEventListener("keydown", function (e) { if (e.key === "Enter") document.getElementById("beginBtn").click(); });
   }
 
-  document.getElementById("overlay").addEventListener("click", function (e) { if (e.target === this) closeOverlay(); });
+  document.getElementById("overlay").addEventListener("click", function (e) { if (e.target === this && !GATE_OPEN) closeOverlay(); });
 
   /* ================= boot ================= */
   function showFallback(msg) {
