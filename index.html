@@ -520,9 +520,6 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
           (done ? '<p class="h-praise">' + esc(habit.praise) + '</p>' : '<p class="h-hint">' + esc(habit.hint) + '</p>') +
         '</div><div class="check">\u2713</div></div>';
     }
-    if (!evening && done) {
-      html += '<p class="both-done"><span class="mk">\u2726</span>Well done \u2014 see you tomorrow.</p>';
-    }
 
     if (set.selfHabit) {
       var own = DATA.ownSuggestions || {}, cfg = DATA.selfSection || {};
@@ -542,8 +539,9 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
         html += '<div class="writeline"><input id="ownInput" type="text" maxlength="90" placeholder="' + esc(cfg.placeholder || "write your own") + '"></div>' +
                 '<div class="write-actions" style="justify-content:flex-end"><button class="btn-add" id="ownAdd">Add</button></div>';
       }
-      if (evening && tomorrowRec && tomorrowRec.promised && sd) {
-        html += '<p class="both-done"><span class="mk">\u2726</span>Promise made \u2014 see you tomorrow.</p>';
+      var bothDone = evening ? (tomorrowRec && tomorrowRec.promised && sd) : (done && sd);
+      if (bothDone) {
+        html += '<p class="both-done"><span class="mk">\u2726</span>' + (evening ? "Promise made" : "Well done") + ' \u2014 see you tomorrow.</p>';
       }
       html += '</div>';
     }
