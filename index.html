@@ -782,26 +782,32 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
   }
 
   function welcome() {
-    var suggested = "";
-    try { if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) suggested = tg.initDataUnsafe.user.first_name || ""; } catch (e) {}
+    var sFirst = "", sLast = "";
+    try { if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) { sFirst = (tg.initDataUnsafe.user.first_name || "").trim(); sLast = (tg.initDataUnsafe.user.last_name || "").trim(); } } catch (e) {}
+    var haveBoth = sFirst.length >= 2 && sLast.length >= 2;
     var appCfg = DATA.app || {};
     document.getElementById("daycard").innerHTML =
       '<div class="mark">\u2726</div>' +
       '<h3>' + esc(appCfg.welcomeTitle || appCfg.name || "My Elegance Journey") + '</h3>' +
       '<div class="share">' + esc("by " + (appCfg.by || (DATA.brand && DATA.brand.name) || "Elegance Academy")) + '</div>' +
       '<p class="line">' + esc(appCfg.welcomeLine || "Ninety days of small courtesies. One petal for every day you complete.") + '</p>' +
-      '<input id="nameInput" type="text" maxlength="30" autocomplete="given-name" placeholder="First name" value="' + esc(suggested) + '">' +
-      '<input id="lastInput" type="text" maxlength="30" autocomplete="family-name" placeholder="Last name">' +
+      (haveBoth
+        ? '<p class="line" style="font-family:Georgia,serif;font-style:italic;color:var(--accent)">Welcome, ' + esc(sFirst + " " + sLast) + '.</p>'
+        : '<input id="nameInput" type="text" maxlength="30" autocomplete="given-name" placeholder="First name" value="' + esc(sFirst) + '">' +
+          '<input id="lastInput" type="text" maxlength="30" autocomplete="family-name" placeholder="Last name" value="' + esc(sLast) + '">') +
       '<input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="Your email">' +
       '<label class="consent"><input type="checkbox" id="dataConsent"><span>I agree that Elegance Academy may process my name and email to give me access to this practice.</span></label>' +
       '<label class="consent"><input type="checkbox" id="mktConsent"><span>I would also like occasional emails about classes and offers.</span></label>' +
       '<button class="primary" id="beginBtn">Begin day one</button>';
     document.getElementById("overlay").classList.add("open");
     GATE_OPEN = true;
-    var inp = document.getElementById("nameInput");
     document.getElementById("beginBtn").onclick = function () {
-      var n = (inp.value || "").trim();
-      var ln = (document.getElementById("lastInput").value || "").trim();
+      var n, ln;
+      if (haveBoth) { n = sFirst; ln = sLast; }
+      else {
+        n = (document.getElementById("nameInput").value || "").trim();
+        ln = (document.getElementById("lastInput").value || "").trim();
+      }
       var em = (document.getElementById("emailInput").value || "").trim();
       if (n.length < 2) { toast("Please write your first name."); return; }
       if (ln.length < 2) { toast("Please write your last name."); return; }
@@ -818,7 +824,10 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
         }
       } catch (e) {}
     };
-    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") document.getElementById("beginBtn").click(); });
+    var nameEl = document.getElementById("nameInput");
+    if (nameEl) nameEl.addEventListener("keydown", function (e) { if (e.key === "Enter") document.getElementById("beginBtn").click(); });
+    var emailEl = document.getElementById("emailInput");
+    if (emailEl) emailEl.addEventListener("keydown", function (e) { if (e.key === "Enter") document.getElementById("beginBtn").click(); });
   }
 
   document.getElementById("overlay").addEventListener("click", function (e) { if (e.target === this && !GATE_OPEN) closeOverlay(); });
