@@ -43,6 +43,7 @@
   .brandbar { padding: 22px 0 0; text-align: center; }
   .wordmark { font-family: Georgia, serif; font-size: 12px; letter-spacing: 5px; text-transform: uppercase; }
   .wordmark .mk { display: block; color: var(--accent); font-size: 13px; letter-spacing: 0; margin-bottom: 5px; }
+  .add-home { text-align: center; margin-top: 10px; font-size: 12.5px; color: var(--accent); font-weight: 600; cursor: pointer; }
   .rule-thin { height: 1px; background: var(--line); margin: 16px 0 0; }
 
   .quote { position: relative; margin-top: 20px; padding: 32px 24px 24px; border-radius: 24px; background: var(--cream); overflow: hidden; text-align: center; }
@@ -200,6 +201,27 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
     }
   } catch (e) {}
   function haptic(t) { try { if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred(t || "light"); } catch (e) {} }
+
+  /* ================= add to home screen =================
+     Telegram does NOT show this in its own menu automatically -- the app has to
+     actively offer it. Bot API 8.0+; checkHomeScreenStatus is async, so we just
+     re-render whenever it (or the completion event) resolves. */
+  var HOME_SCREEN_STATUS = null;
+  try {
+    if (tg && tg.checkHomeScreenStatus) {
+      tg.checkHomeScreenStatus(function (status) {
+        HOME_SCREEN_STATUS = status;
+        if (typeof STATE !== "undefined" && STATE) render();
+      });
+    }
+    if (tg && tg.onEvent) {
+      tg.onEvent("homeScreenAdded", function () {
+        HOME_SCREEN_STATUS = "added";
+        toast("Added to your Home Screen.");
+        render();
+      });
+    }
+  } catch (e) {}
 
   /* ================= backend sync =================
      telegram_id is stable across devices and reinstalls, unlike local storage,
@@ -365,12 +387,18 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
     var idx = Math.floor(rng(SEEDS.praise + day * 31 + catId.length)() * pr.length);
     var habit = item ? { id: catId, title: item.t, hint: item.h, praise: pr[idx] } : null;
 
+    // "Kindness for Yourself" -- always available, optional, does not affect streak/petals.
+    var selfItem = pick(pools["self"], "self", day, cycleLen);
+    var selfPr = (DATA.praise && DATA.praise["self"]) || ["Beautifully done."];
+    var selfIdx = Math.floor(rng(SEEDS.praise + day * 31 + 4)() * selfPr.length);
+    var selfHabit = selfItem ? { id: "self", title: selfItem.t, hint: selfItem.h, praise: selfPr[selfIdx] } : null;
+
     var qs = DATA.quotes || [], quote = "";
     if (qs.length) {
       var qOrder = shuffled(qs.length, SEEDS.quote + Math.floor((day - 1) / qs.length) * 7919);
       quote = qs[qOrder[(day - 1) % qs.length]];
     }
-    return { habit: habit, category: dir, quote: quote };
+    return { habit: habit, category: dir, quote: quote, selfHabit: selfHabit };
   }
   function speckles(seed, n, w, h) {
     var r = rng(seed), s = "", i;
@@ -427,6 +455,10 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
 
     html += '<div class="brandbar"><div class="wordmark"><span class="mk">\u2726</span>' + esc(brand.name || "Elegance Academy") + '</div><div class="rule-thin"></div></div>';
 
+    if (tg && tg.addToHomeScreen && HOME_SCREEN_STATUS && HOME_SCREEN_STATUS !== "unsupported" && HOME_SCREEN_STATUS !== "added") {
+      html += '<div class="add-home" id="addHome">+ Add to Home Screen</div>';
+    }
+
     html += '<div class="quote"><div class="speck">' + speckles(101, 46, 300, 200) + '</div><div class="inner">' +
             '<div class="mk">&#8220;</div><p>' + esc(set.quote) + '</p>' +
             '<div class="by">' + esc(brand.name || "Elegance Academy") + '</div></div></div>';
@@ -437,7 +469,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
               '<div class="hero-tag">Day ' + day + ' of ' + cyc + '</div></div>';
     }
 
-    html += '<div class="greet"><h1>' + greeting() + '<br><em>' + esc(STATE.name || "there") + '</em></h1>' +
+    html += '<div class="greet"><h1>' + greeting() + ' <em>' + esc(STATE.name || "there") + '</em></h1>' +
             '<p>' + esc((DATA.student && DATA.student.greetingLine) || "") + '</p></div>';
 
     var dl = DATA.dayline || {};
@@ -457,6 +489,28 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
         '<div class="h-body"><p class="h-title">' + esc(habit.title) + '</p>' +
           (done ? '<p class="h-praise">' + esc(habit.praise) + '</p>' : '<p class="h-hint">' + esc(habit.hint) + '</p>') +
         '</div><div class="check">\u2713</div></div>';
+    }
+
+    if (set.selfHabit) {
+      var own = DATA.ownSuggestions || {}, cfg = DATA.selfSection || {};
+      var mine = rec.own || [], max = own.maxPerDay || 2, sd = !!rec.done.self;
+      html += '<div class="self-block"><h3 class="self-heading">' + esc(cfg.heading || "Today I will be kind to myself and\u2026") + '</h3>';
+      mine.forEach(function (m, i) {
+        html += '<div class="mine-item' + (m.done ? " done" : "") + '" data-own="' + i + '">' +
+                '<div class="check">\u2713</div><div class="t">' + esc(m.text) + '</div>' +
+                '<button class="rm" data-remove="' + i + '" aria-label="Remove">\u00d7</button></div>';
+      });
+      if (mine.length < max) {
+        html += '<div class="writeline"><input id="ownInput" type="text" maxlength="90" placeholder="' + esc(cfg.placeholder || "write your own") + '"></div>' +
+                '<div class="write-actions"><div class="clarify">' + esc(cfg.note || "") + '</div>' +
+                '<button class="btn-add" id="ownAdd">Add</button></div>';
+      }
+      html += '<div class="suggestion' + (sd ? " done" : "") + '" data-id="self"><div class="txt">' +
+                '<div class="self-label">' + esc(cfg.suggestionLabel || "Elegance Academy suggestion") + '</div>' +
+                '<p class="s-line">' + esc(set.selfHabit.title) + '</p>' +
+                (sd ? '<p class="pr">' + esc(set.selfHabit.praise) + '</p>' : '<p class="hint">' + esc(set.selfHabit.hint) + '</p>') +
+              '</div><div class="check">\u2713</div></div>' +
+              '<p class="consent">' + esc(own.consentLine || "") + '</p></div>';
     }
     html += '</section>';
 
@@ -498,6 +552,13 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
   }
 
   function bind() {
+    var addHomeBtn = document.getElementById("addHome");
+    if (addHomeBtn) {
+      addHomeBtn.onclick = function () {
+        haptic("light");
+        try { tg.addToHomeScreen(); } catch (e) {}
+      };
+    }
     Array.prototype.forEach.call(document.querySelectorAll(".habit, .suggestion"), function (el) {
       el.addEventListener("click", function () { toggleHabit(el.getAttribute("data-id")); });
     });
@@ -538,14 +599,15 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
   function toggleHabit(id) {
     var rec = dayRecord(todayISO());
     var day = programDay(), set = todaysSet(day);
-    var h = set.habit && set.habit.id === id ? set.habit : null;
+    var isMain = !!(set.habit && set.habit.id === id);
+    var h = isMain ? set.habit : (id === "self" ? set.selfHabit : null);
     rec.done[id] = !rec.done[id];
     saveState();
     haptic(rec.done[id] ? "medium" : "light");
     render();
     if (rec.done[id] && h) toast(h.praise);
 
-    if (rec.done[id] && !rec.celebrated) {
+    if (isMain && rec.done[id] && !rec.celebrated) {
       rec.celebrated = true; rec.closed = true; saveState();
       setTimeout(celebrate, 480);
     }
