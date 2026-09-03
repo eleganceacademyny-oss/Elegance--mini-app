@@ -90,7 +90,7 @@
   .habit.done .h-title { color: var(--soft); }
   .h-hint { font-size: 12.5px; color: var(--soft); margin: 3px 0 0; }
   .h-praise { font-size: 12.5px; color: var(--accent); margin: 3px 0 0; font-style: italic; }
-  .check { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 14px; color: transparent; transition: all .2s ease; }
+  .check { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; border: 1.5px solid var(--faint); display: flex; align-items: center; justify-content: center; font-size: 14px; color: transparent; transition: all .2s ease; }
   .habit.done .check, .suggestion.done .check, .mine-item.done .check { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   .self-block { margin-top: 26px; }
@@ -447,9 +447,12 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
     var brand = DATA.brand || {}, dirs = DATA.directions || [], imgs = DATA.images || {};
     var pr = DATA.program || {}, cyc = pr.cycleDays || 90;
     var day = programDay(), iso = todayISO(), rec = dayRecord(iso);
-    var set = todaysSet(day);
+    var evening = new Date().getHours() >= 18;
+    var viewDay = evening ? day + 1 : day;
+    var set = todaysSet(viewDay);
     var habit = set.habit;
-    var done = !!(habit && rec.done[habit.id]);
+    var tomorrowRec = evening ? dayRecord(isoPlus(todayISO(), 1)) : null;
+    var done = evening ? !!(tomorrowRec && tomorrowRec.promised) : !!(habit && rec.done[habit.id]);
     var petals = completedCount(), streak = currentStreak();
     var html = "";
 
@@ -480,11 +483,11 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
             '<span>petals earned</span>' +
             '<div class="streak"><b>' + streak + '</b> day' + (streak === 1 ? "" : "s") + ' in a row</div></div></div>';
 
-    html += '<section><div class="sec-head"><h2>Today\u2019s practice</h2></div>';
+    html += '<section><div class="sec-head"><h2>' + (evening ? "Tomorrow\u2019s practice" : "Today\u2019s practice") + '</h2></div>';
     if (set.category && set.category.title) html += '<div class="eyebrow">' + esc(set.category.title) + '</div>';
-    if (!done) html += '<p class="gentle">One small step today.</p>';
+    if (!done) html += '<p class="gentle">' + (evening ? "Promise yourself, for tomorrow." : "One small step today.") + '</p>';
     if (habit) {
-      html += '<div class="habit' + (done ? " done" : "") + '" data-id="' + esc(habit.id) + '">' +
+      html += '<div class="habit' + (done ? " done" : "") + '" data-id="' + (evening ? "promise" : esc(habit.id)) + '">' +
         '<div class="thumb">' + (imgs[habit.id] ? '<div style="background-image:url(\'' + esc(imgs[habit.id]) + '\');background-size:cover;background-position:center"></div>' : '') + '</div>' +
         '<div class="h-body"><p class="h-title">' + esc(habit.title) + '</p>' +
           (done ? '<p class="h-praise">' + esc(habit.praise) + '</p>' : '<p class="h-hint">' + esc(habit.hint) + '</p>') +
@@ -495,6 +498,11 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       var own = DATA.ownSuggestions || {}, cfg = DATA.selfSection || {};
       var mine = rec.own || [], max = own.maxPerDay || 2, sd = !!rec.done.self;
       html += '<div class="self-block"><h3 class="self-heading">' + esc(cfg.heading || "Today I will be kind to myself and\u2026") + '</h3>';
+      html += '<div class="suggestion' + (sd ? " done" : "") + '" data-id="self"><div class="txt">' +
+                '<div class="self-label">' + esc(cfg.suggestionLabel || "Elegance Academy suggestion") + '</div>' +
+                '<p class="s-line">' + esc(set.selfHabit.title) + '</p>' +
+                (sd ? '<p class="pr">' + esc(set.selfHabit.praise) + '</p>' : '<p class="hint">' + esc(set.selfHabit.hint) + '</p>') +
+              '</div><div class="check">\u2713</div></div>';
       mine.forEach(function (m, i) {
         html += '<div class="mine-item' + (m.done ? " done" : "") + '" data-own="' + i + '">' +
                 '<div class="check">\u2713</div><div class="t">' + esc(m.text) + '</div>' +
@@ -502,15 +510,9 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       });
       if (mine.length < max) {
         html += '<div class="writeline"><input id="ownInput" type="text" maxlength="90" placeholder="' + esc(cfg.placeholder || "write your own") + '"></div>' +
-                '<div class="write-actions"><div class="clarify">' + esc(cfg.note || "") + '</div>' +
-                '<button class="btn-add" id="ownAdd">Add</button></div>';
+                '<div class="write-actions" style="justify-content:flex-end"><button class="btn-add" id="ownAdd">Add</button></div>';
       }
-      html += '<div class="suggestion' + (sd ? " done" : "") + '" data-id="self"><div class="txt">' +
-                '<div class="self-label">' + esc(cfg.suggestionLabel || "Elegance Academy suggestion") + '</div>' +
-                '<p class="s-line">' + esc(set.selfHabit.title) + '</p>' +
-                (sd ? '<p class="pr">' + esc(set.selfHabit.praise) + '</p>' : '<p class="hint">' + esc(set.selfHabit.hint) + '</p>') +
-              '</div><div class="check">\u2713</div></div>' +
-              '<p class="consent">' + esc(own.consentLine || "") + '</p></div>';
+      html += '</div>';
     }
     html += '</section>';
 
@@ -596,7 +598,17 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
     if (sa) sa.onclick = function () { showAllClasses = !showAllClasses; render(); };
   }
 
+  function togglePromise() {
+    var trec = dayRecord(isoPlus(todayISO(), 1));
+    trec.promised = !trec.promised;
+    saveState();
+    haptic(trec.promised ? "medium" : "light");
+    render();
+    if (trec.promised) toast("Promise made \u2014 see you tomorrow.");
+  }
+
   function toggleHabit(id) {
+    if (id === "promise") { togglePromise(); return; }
     var rec = dayRecord(todayISO());
     var day = programDay(), set = todaysSet(day);
     var isMain = !!(set.habit && set.habit.id === id);
