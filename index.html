@@ -490,7 +490,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       html += '<div class="habit' + (done ? " done" : "") + '" data-id="' + (evening ? "promise" : esc(habit.id)) + '">' +
         '<div class="thumb">' + (imgs[habit.id] ? '<div style="background-image:url(\'' + esc(imgs[habit.id]) + '\');background-size:cover;background-position:center"></div>' : '') + '</div>' +
         '<div class="h-body"><p class="h-title">' + esc(habit.title) + '</p>' +
-          (done ? '<p class="h-praise">' + esc(habit.praise) + '</p>' : '<p class="h-hint">' + esc(habit.hint) + '</p>') +
+          (done ? '<p class="h-praise">' + esc(evening ? "Promise made \u2014 see you tomorrow." : habit.praise) + '</p>' : '<p class="h-hint">' + esc(habit.hint) + '</p>') +
         '</div><div class="check">\u2713</div></div>';
     }
 
