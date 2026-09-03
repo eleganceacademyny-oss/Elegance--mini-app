@@ -571,12 +571,12 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       var parsed = parseClassDate(c.date);
       var big, small;
       if (parsed) { big = String(parsed.day); small = MONTH_NAMES[parsed.month]; }
-      else if (c.onDemand) { big = "\u2726"; small = ""; }
+      else if (c.onDemand) { big = "\u2726"; small = "Zoom Recording"; }
       else { big = "\u2726"; small = c.date || ""; }
-      var isVirtual = /zoom/i.test(c.format || "");
+      var isVirtual = /zoom/i.test(c.format || "") && !c.onDemand;
       html += '<div class="session' + (c.reserved ? " reserved" : "") + '" data-sid="' + esc(c.id) + '">' +
                 '<div class="s-when"><b>' + esc(big) + '</b><i>' + esc(small) + '</i></div>' +
-                '<div class="s-body"><div class="s-title">' + esc(c.title) + (isVirtual ? ' <span class="s-virtual">' + (c.onDemand ? "Zoom Recording" : "Virtual") + '</span>' : '') + '</div>' +
+                '<div class="s-body"><div class="s-title">' + esc(c.title) + (isVirtual ? ' <span class="s-virtual">Virtual</span>' : '') + '</div>' +
                   '<div class="s-meta">' + esc(c.format || "") + (c.price ? " \u00b7 " + esc(c.price) : "") + '</div>' +
                   '<div class="s-spots' + (low ? " low" : "") + '">' + (c.onDemand ? "Always open" : (c.reserved ? "Place held" : (c.spotsLeft || 0) + " left")) + '</div></div>' +
                 '<button class="btn-ghost book"' + (c.reserved ? " disabled" : "") + '>' + (c.reserved ? "\u2713" : (c.onDemand ? "Watch Now" : "Reserve")) + '</button></div>';
