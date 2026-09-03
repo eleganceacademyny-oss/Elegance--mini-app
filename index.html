@@ -77,7 +77,8 @@
   .sec-head h2 { margin: 0; font-family: Georgia, serif; font-weight: 400; font-size: 22px; }
   .sec-head span { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--soft); }
   .gentle { font-size: 12.5px; color: var(--soft); font-style: italic; margin: 4px 0 0; }
-  .both-done { font-size: 13px; color: var(--accent); font-style: italic; text-align: center; margin: 14px 0 0; }
+  .both-done { font-size: 20px; font-family: Georgia, serif; color: var(--accent); text-align: center; margin: 8px 0 0; line-height: 1.35; }
+  .both-done .mk { display: block; font-size: 15px; margin-bottom: 4px; }
 
   .eyebrow { font-size: 9.5px; letter-spacing: 2.8px; text-transform: uppercase; color: var(--accent); margin: 24px 0 10px; }
 
@@ -105,7 +106,7 @@
   .suggestion .hint { margin: 5px 0 0; font-size: 12.5px; color: var(--soft); }
   .suggestion .pr { margin: 5px 0 0; font-size: 12.5px; color: var(--accent); font-style: italic; }
 
-  .writeline input { width: 100%; padding: 8px 2px 12px; border: none; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font-family: Georgia, serif; font-size: 17px; outline: none; }
+  .writeline input { width: 100%; padding: 10px 10px 12px; border: none; border-bottom: 1px solid var(--line); border-radius: 8px 8px 0 0; background: var(--card); color: var(--ink); font-family: Georgia, serif; font-size: 17px; outline: none; }
   .writeline input::placeholder { color: var(--faint); font-style: italic; }
   .writeline input:focus { border-bottom-color: var(--accent); }
   .write-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 12px; }
@@ -519,6 +520,9 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
           (done ? '<p class="h-praise">' + esc(habit.praise) + '</p>' : '<p class="h-hint">' + esc(habit.hint) + '</p>') +
         '</div><div class="check">\u2713</div></div>';
     }
+    if (!evening && done) {
+      html += '<p class="both-done"><span class="mk">\u2726</span>Well done \u2014 see you tomorrow.</p>';
+    }
 
     if (set.selfHabit) {
       var own = DATA.ownSuggestions || {}, cfg = DATA.selfSection || {};
@@ -539,7 +543,7 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
                 '<div class="write-actions" style="justify-content:flex-end"><button class="btn-add" id="ownAdd">Add</button></div>';
       }
       if (evening && tomorrowRec && tomorrowRec.promised && sd) {
-        html += '<p class="both-done">Promise made \u2014 see you tomorrow.</p>';
+        html += '<p class="both-done"><span class="mk">\u2726</span>Promise made \u2014 see you tomorrow.</p>';
       }
       html += '</div>';
     }
@@ -572,10 +576,10 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
       var isVirtual = /zoom/i.test(c.format || "");
       html += '<div class="session' + (c.reserved ? " reserved" : "") + '" data-sid="' + esc(c.id) + '">' +
                 '<div class="s-when"><b>' + esc(big) + '</b><i>' + esc(small) + '</i></div>' +
-                '<div class="s-body"><div class="s-title">' + esc(c.title) + (isVirtual ? ' <span class="s-virtual">Virtual</span>' : '') + '</div>' +
+                '<div class="s-body"><div class="s-title">' + esc(c.title) + (isVirtual ? ' <span class="s-virtual">' + (c.onDemand ? "Zoom Recording" : "Virtual") + '</span>' : '') + '</div>' +
                   '<div class="s-meta">' + esc(c.format || "") + (c.price ? " \u00b7 " + esc(c.price) : "") + '</div>' +
                   '<div class="s-spots' + (low ? " low" : "") + '">' + (c.onDemand ? "Always open" : (c.reserved ? "Place held" : (c.spotsLeft || 0) + " left")) + '</div></div>' +
-                '<button class="btn-ghost book"' + (c.reserved ? " disabled" : "") + '>' + (c.reserved ? "\u2713" : "Reserve") + '</button></div>';
+                '<button class="btn-ghost book"' + (c.reserved ? " disabled" : "") + '>' + (c.reserved ? "\u2713" : (c.onDemand ? "Watch Now" : "Reserve")) + '</button></div>';
     });
     if (up.length > 3) {
       html += '<button class="see-all" id="seeAll">' +
@@ -654,8 +658,8 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
     if (rec.done[id] && h) toast(h.praise);
 
     if (isMain && rec.done[id] && !rec.celebrated) {
-      rec.celebrated = true; rec.closed = true; saveState();
-      setTimeout(celebrate, 480);
+      rec.celebrated = true; saveState();
+      setTimeout(checkMilestone, 400);
     }
   }
 
@@ -678,23 +682,6 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
     try {
       fetch(own.collectUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) }).catch(function () {});
     } catch (e) {}
-  }
-
-  function celebrate() {
-    var list = DATA.completion || [];
-    var day = programDay(), set = todaysSet(day);
-    var c = list.length ? list[Math.floor(rng(777 + day)() * list.length)] : { title: "Day complete", line: "One small step, truly taken.", tomorrow: "" };
-    haptic("medium");
-    document.getElementById("daycard").innerHTML =
-      '<div class="mark">\u2726 \u2726 \u2726</div><h3>' + esc(c.title) + '</h3>' +
-      '<div class="share">' + esc((set.category && set.category.title) || "today") + ' \u00b7 complete</div>' +
-      '<p class="line">' + esc(c.line) + '</p>' +
-      '<div class="stat">' + currentStreak() + ' <small>day streak</small></div>' +
-      (c.tomorrow ? '<div class="tomorrow">' + esc(c.tomorrow) + '</div>' : '') +
-      '<div class="brand">' + esc((DATA.brand && DATA.brand.name) || "Elegance Academy") + '</div>' +
-      '<button id="closeCard">Close</button>';
-    document.getElementById("overlay").classList.add("open");
-    document.getElementById("closeCard").onclick = function () { closeOverlay(); checkMilestone(); };
   }
 
   /* ================= milestones ================= */
@@ -732,19 +719,19 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
     if (!c || c.reserved) return;
     haptic("light");
     document.getElementById("daycard").innerHTML =
-      '<div class="mark">\u2726</div><h3>Reserve your place</h3>' +
+      '<div class="mark">\u2726</div><h3>' + (c.onDemand ? "Watch this class" : "Reserve your place") + '</h3>' +
       '<p class="line" style="font-family:Georgia,serif;font-size:19px">' + esc(c.title) + '</p>' +
       '<div class="share" style="color:var(--soft);margin-top:8px">' + esc([cleanDateLabel(c.date), c.time].filter(Boolean).join(" \u00b7 ")) + '</div>' +
       '<div class="share" style="color:var(--soft);margin-top:4px">' + esc(c.format || "") + '</div>' +
-      '<div class="tomorrow">You will finish booking on our website. Confirmation arrives by email.</div>' +
-      '<button class="primary" id="confirmBook">Continue to booking</button><button id="closeCard">Not now</button>';
+      '<div class="tomorrow">' + (c.onDemand ? "You will watch this on our website." : "You will finish booking on our website. Confirmation arrives by email.") + '</div>' +
+      '<button class="primary" id="confirmBook">' + (c.onDemand ? "Continue to watch" : "Continue to booking") + '</button><button id="closeCard">Not now</button>';
     document.getElementById("overlay").classList.add("open");
     document.getElementById("closeCard").onclick = closeOverlay;
     document.getElementById("confirmBook").onclick = function () {
       haptic("medium");
       try { if (tg && tg.openLink) tg.openLink(c.bookingUrl); else window.open(c.bookingUrl, "_blank"); } catch (e) {}
       if (!c.onDemand) { c.reserved = true; if (c.spotsLeft > 0) c.spotsLeft--; }
-      closeOverlay(); render(); toast("Opening your booking page\u2026");
+      closeOverlay(); render(); toast(c.onDemand ? "Opening the recording\u2026" : "Opening your booking page\u2026");
     };
   }
 
