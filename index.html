@@ -341,6 +341,20 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
   }
   // \u041e\u0434\u0438\u043d \u043a\u043b\u044e\u0447\u0435\u0432\u043e\u0439 \u043d\u0430\u0432\u044b\u043a \u0432 \u0434\u0435\u043d\u044c (\u0431\u044b\u043b\u043e 4) \u2014 \u043f\u043e \u043a\u0440\u0443\u0433\u0443: Kindness -> Respect -> Elegance.
   var TASK_CATEGORIES = ["kindness", "respect", "elegance"];
+
+  // \u0415\u0436\u0435\u0434\u043d\u0435\u0432\u043d\u043e \u043c\u0435\u043d\u044f\u044e\u0449\u0435\u0435\u0441\u044f \u0444\u043e\u0442\u043e \u043d\u0430 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0435 \u0434\u043d\u044f. \u0418\u0440\u0438\u043d\u0430 \u043f\u0440\u0438\u0441\u044b\u043b\u0430\u0435\u0442 \u043d\u043e\u0432\u044b\u0435 \u2014
+  // \u043f\u0440\u043e\u0441\u0442\u043e \u0434\u043e\u0431\u0430\u0432\u043b\u044f\u0439 URL \u0432 \u043a\u043e\u043d\u0435\u0446 \u044d\u0442\u043e\u0433\u043e \u0441\u043f\u0438\u0441\u043a\u0430, \u043f\u043e\u0440\u044f\u0434\u043e\u043a \u0440\u043e\u0442\u0430\u0446\u0438\u0438 \u0441\u0430\u043c \u0441\u0434\u0432\u0438\u043d\u0435\u0442\u0441\u044f.
+  var HERO_PHOTOS = [
+    "https://images.unsplash.com/photo-1610629737680-8a6daf3dadf7?w=1200&q=80",
+    "https://images.unsplash.com/photo-1618244965061-1d27b208d6e8?w=1200&q=80",
+    "https://images.unsplash.com/photo-1751399566412-ad1194241c5c?w=1200&q=80",
+    "https://images.unsplash.com/photo-1704627364363-6a70e2fad981?w=1200&q=80",
+    "https://images.unsplash.com/photo-1775701663549-f32e3f168358?w=1200&q=80"
+  ];
+  function heroForDay(day) {
+    if (!HERO_PHOTOS.length) return null;
+    return HERO_PHOTOS[(day - 1) % HERO_PHOTOS.length];
+  }
   function categoryForDay(day) { return TASK_CATEGORIES[(day - 1) % TASK_CATEGORIES.length]; }
   function todaysSet(day) {
     var pools = DATA.pools || {}, cycleLen = (DATA.program && DATA.program.cycleDays) || 90;
@@ -417,8 +431,9 @@ window.__APP_DATA__ = {"brand": {"name": "Elegance Academy", "tagline": "Timeles
             '<div class="mk">&#8220;</div><p>' + esc(set.quote) + '</p>' +
             '<div class="by">' + esc(brand.name || "Elegance Academy") + '</div></div></div>';
 
-    if (imgs.hero) {
-      html += '<div class="hero"><div class="hero-img" style="background-image:url(\'' + esc(imgs.hero) + '\')"></div>' +
+    var heroUrl = heroForDay(day) || imgs.hero;
+    if (heroUrl) {
+      html += '<div class="hero"><div class="hero-img" style="background-image:url(\'' + esc(heroUrl) + '\')"></div>' +
               '<div class="hero-tag">Day ' + day + ' of ' + cyc + '</div></div>';
     }
 
